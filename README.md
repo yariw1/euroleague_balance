@@ -73,7 +73,7 @@ The app downloads the file each time it opens. Without internet it uses the last
 
 ## Updating the app
 
-After changing any file, change the version in `sw.js` (for example `elb-v14` → `elb-v15`) and upload the changed files to GitHub. Phones then pick up the new version the next time the app is opened with internet (sometimes it takes a second open). You don't need to change the version when you only update `season-2026-27.json`; the app always fetches the latest one.
+After changing any file, change the version in `sw.js` (for example `elb-v16` → `elb-v17`) and upload the changed files to GitHub. Phones then pick up the new version the next time the app is opened with internet (sometimes it takes a second open). You don't need to change the version when you only update `season-2026-27.json`; the app always fetches the latest one.
 
 ## Data source
 
