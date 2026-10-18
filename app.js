@@ -19,7 +19,7 @@ const TEXT = {
   he: {
     dir: "rtl", locale: "he-IL", switchTo: "EN", switchLabel: "Switch to English",
     title: "מאזן יורוליג", sub: "2026-27 מול 2025-26",
-    intro: 'התוצאות של כל קבוצה ביורוליג 2026-27 בהשוואה לאותם משחקים ב־2025-26: <b class="neg"><bdi dir="ltr">+1</bdi></b> על תוצאה טובה יותר, <b class="neg"><bdi dir="ltr">−1</bdi></b> על תוצאה גרועה יותר. בשיקטאש החליפה את מונאקו, ולכן המשחקים מולה מושווים למשחקים מול מונאקו בעונה שעברה.',
+    intro: 'התוצאות של כל קבוצה ביורוליג 2026-27 בהשוואה לאותם משחקים ב־2025-26:<br><b class="neg"><bdi dir="ltr">+1</bdi></b> על תוצאה טובה יותר, <b class="neg"><bdi dir="ltr">−1</bdi></b> על תוצאה גרועה יותר.<br>בשיקטאש החליפה את מונאקו, ולכן המשחקים מולה מושווים למשחקים מול מונאקו בעונה שעברה.',
     lookupTitle: "חיפוש משחק", team: "קבוצה", opponent: "יריבה", location: "מיקום", homeAway: "בית/<br>חוץ",
     tabBalance: "מאזן", tabTable: "טבלה", tabLookup: "חיפוש",
     short: { "Hapoel Tel Aviv": "הפועל", "Maccabi Tel Aviv": "מכבי" },
@@ -39,7 +39,7 @@ const TEXT = {
   en: {
     dir: "ltr", locale: "en-GB", switchTo: "עב", switchLabel: "עברית",
     title: "EuroLeague Balance", sub: "2026-27 vs 2025-26",
-    intro: "Each team's 2026-27 EuroLeague results compared with the same games in 2025-26: <b class=\"neg\">+1</b> for a better result, <b class=\"neg\">−1</b> for a worse one. Besiktas replaced Monaco, so its games are compared with last season's Monaco games.",
+    intro: "Each team's 2026-27 EuroLeague results compared with the same games in 2025-26:<br><b class=\"neg\">+1</b> for a better result, <b class=\"neg\">−1</b> for a worse one.<br>Besiktas replaced Monaco, so its games are compared with last season's Monaco games.",
     lookupTitle: "Look up a game", team: "Team", opponent: "Opponent", location: "Location", homeAway: "Home/<br>Away",
     tabBalance: "Balance", tabTable: "Table", tabLookup: "Look up",
     short: { "Hapoel Tel Aviv": "Hapoel", "Maccabi Tel Aviv": "Maccabi" },
