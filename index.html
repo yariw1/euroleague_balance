@@ -19,9 +19,53 @@
 <main>
   <!-- BALANCE -->
   <section id="view-balance" class="view">
-    <p class="intro muted small">Each team's 2026-27 EuroLeague results compared with the same games in 2025-26: <b class="neg">+1</b> for a better result, <b class="neg">−1</b> for a worse one. Besiktas replaced Monaco, so its games are compared with last season's Monaco games.</p>
     <div id="balance-cards"></div>
-    <p id="season-status" class="muted small"></p>
+    <div class="card backup">
+      <h2>Backup</h2>
+      <p class="muted" id="backup-status"></p>
+      <div class="row">
+        <button class="btn" id="btn-export">Export backup</button>
+        <button class="btn ghost" id="btn-import">Import backup</button>
+      </div>
+      <p id="backup-msg" class="msg" role="status"></p>
+      <input type="file" id="import-file" accept=".json,.txt,application/json,text/plain" hidden>
+      <div id="import-confirm" class="confirm" hidden>
+        <p id="import-msg"></p>
+        <div class="row">
+          <button class="btn danger" id="btn-import-yes">Replace my data</button>
+          <button class="btn ghost" id="btn-import-no">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADD / EDIT -->
+  <section id="view-add" class="view" hidden>
+    <div class="card">
+      <h2 id="add-title">Add a game</h2>
+      <label class="lbl">Team</label>
+      <div class="seg" id="add-team"></div>
+      <label class="lbl" for="add-opp">Opponent</label>
+      <select id="add-opp"></select>
+      <label class="lbl">Location</label>
+      <div class="seg" id="add-loc"></div>
+      <label class="lbl">Result</label>
+      <div class="seg" id="add-res"></div>
+      <label class="lbl">Score <span class="muted">(optional)</span></label>
+      <div class="score-row">
+        <input type="number" inputmode="numeric" id="add-s1" placeholder="Team">
+        <span>–</span>
+        <input type="number" inputmode="numeric" id="add-s2" placeholder="Opp.">
+      </div>
+      <label class="lbl" for="add-date">Date <span class="muted">(optional)</span></label>
+      <input type="date" id="add-date">
+      <div id="add-preview" class="preview"></div>
+      <button class="btn big" id="btn-save">Save game</button>
+      <div class="row" id="edit-actions" hidden>
+        <button class="btn danger ghost" id="btn-delete">Delete this game</button>
+      </div>
+      <p id="add-msg" class="msg" role="status"></p>
+    </div>
   </section>
 
   <!-- LOOKUP -->
@@ -44,18 +88,20 @@
     <div class="seg wide" id="tb-sort"></div>
     <div class="table-wrap">
       <table class="games">
-        <thead><tr><th>Opponent</th><th>Home/<br>Away</th><th>25-26</th><th>26-27</th><th>±</th></tr></thead>
+        <thead><tr><th>Opponent</th><th>H/A</th><th>25-26</th><th>26-27</th><th>±</th></tr></thead>
         <tbody id="tb-body"></tbody>
         <tfoot id="tb-foot"></tfoot>
       </table>
     </div>
+    <p class="muted small">Tap a row to add or edit this season's result.</p>
   </section>
 </main>
 
 <nav class="tabs">
   <button data-view="balance" class="active"><span class="ico">⚖️</span>Balance</button>
-  <button data-view="table"><span class="ico">📋</span>Table</button>
+  <button data-view="add"><span class="ico">➕</span>Add</button>
   <button data-view="lookup"><span class="ico">🔍</span>Look up</button>
+  <button data-view="table"><span class="ico">📋</span>Table</button>
 </nav>
 
 <script src="data-2025-26.js"></script>

@@ -1,17 +1,33 @@
 // EuroLeague Balance — compares 2026-27 results with the same games in 2025-26.
-// This season's games are read from season-2026-27.json (same format as the old backup export).
+// This season's games are stored only on this device (localStorage).
 
-const SEASON_FILE = "season-2026-27.json";
+const STORE_KEY = "elb.games.v1";
+const BACKUP_KEY = "elb.lastBackup";
 const SHORT = { "Hapoel Tel Aviv": "Hapoel", "Maccabi Tel Aviv": "Maccabi" };
 const CLS = { "Hapoel Tel Aviv": "hapoel", "Maccabi Tel Aviv": "maccabi" };
 
+// ---------- storage ----------
+function loadGames() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
+}
+function saveGames(games) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(games));
+}
 const key = (team, opp, loc) => `${team}|${opp}|${loc}`;
-// Opponents that were renamed in the app (old name -> current name).
+// Opponents that were renamed in the app (old saved name -> current name).
 const RENAMED = { "ASVEL": "Villeurbanne" };
+function migrate(list) {
+  const out = {};
+  for (const g of list) {
+    if (RENAMED[g.opponent]) g.opponent = RENAMED[g.opponent];
+    out[key(g.team, g.opponent, g.location)] = g;
+  }
+  return out;
+}
 
-let games = {}; // key "team|opponent|H" -> {team, opponent, location, result, score, date}
-let seasonInfo = { state: "loading" }; // "loading" | "ok" (+ exported, count, skipped) | "error" (+ message)
-
+let games = loadGames(); // key "team|opponent|H" -> {team, opponent, location, result, score, date, saved}
+if (Object.values(games).some(g => RENAMED[g.opponent])) { games = migrate(Object.values(games)); saveGames(games); }
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 // Display name: a replaced team shows both names, e.g. "Monaco/Besiktas".
 const oppName = opp => (OPPONENT_ALIAS[opp] ? `${OPPONENT_ALIAS[opp]}/${opp}` : opp);
 
@@ -42,40 +58,16 @@ function summary(team) {
   return { bal, played, better, worse, same };
 }
 
-// Reads this season's results file. Entries that don't match a known game are skipped.
-async function loadSeason() {
-  try {
-    const res = await fetch(SEASON_FILE, { cache: "no-store" });
-    if (!res.ok) throw new Error(`${SEASON_FILE} not found (${res.status})`);
-    const data = await res.json();
-    if (!data || !Array.isArray(data.games)) throw new Error(`${SEASON_FILE} has no "games" list`);
-    const out = {};
-    let skipped = 0;
-    for (const g of data.games) {
-      if (g && RENAMED[g.opponent]) g.opponent = RENAMED[g.opponent];
-      const ok = g && TEAMS.includes(g.team) && opponentsFor(g.team).includes(g.opponent)
-        && (g.location === "H" || g.location === "A") && (g.result === "W" || g.result === "L");
-      if (ok) out[key(g.team, g.opponent, g.location)] = g; else skipped++;
-    }
-    games = out;
-    seasonInfo = { state: "ok", exported: data.exported || "", count: Object.keys(out).length, skipped };
-  } catch (err) {
-    // Browsers don't let a page opened straight from disk (file://) read other files.
-    const message = location.protocol === "file:"
-      ? "the app was opened as a file. Open it from its web address (GitHub Pages) or a local server instead."
-      : err && err.message ? err.message : String(err);
-    seasonInfo = { state: "error", message };
-  }
-}
-
 // ---------- helpers ----------
 const $ = id => document.getElementById(id);
 const signed = n => (n > 0 ? "+" + n : String(n));
 const tone = n => (n > 0 ? "pos" : n < 0 ? "neg" : "zero");
+const locName = l => (l === "H" ? "Home" : "Away");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 // Dates: last season uses "4 December 2025", this season "2026-10-16" (read as a local date).
 const toTime = d => (!d ? NaN : new Date(/^\d{4}-\d{2}-\d{2}$/.test(d) ? d + "T00:00" : d).getTime());
 const shortDate = d => { const t = toTime(d); return isNaN(t) ? (d || "") : new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" }); };
+const todayISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 
 function makeSeg(el, options, value, onChange) {
   el.innerHTML = "";
@@ -98,36 +90,33 @@ function fillOpponents(select, team, keep) {
   select.innerHTML = opps.map(o => `<option value="${esc(o)}">${esc(oppName(o))}</option>`).join("");
   if (keep && opps.includes(keep)) select.value = keep;
 }
-const TEAM_OPTS = TEAMS.map(t => ({ label: SHORT[t], value: t, cls: CLS[t] }));
+const TEAM_OPTS = TEAMS.map(t => ({ label: SHORT[t], value: t }));
 const LOC_OPTS = [{ label: "Home", value: "H" }, { label: "Away", value: "A" }];
+const RES_OPTS = [{ label: "Win", value: "W", cls: "w" }, { label: "Loss", value: "L", cls: "l" }];
 
 // ---------- tabs ----------
-let currentView = "balance";
-// The phone's Back button: other screens add one history entry, so Back returns to Balance
-// first and only leaves the app from there. Pass fromHistory to show a screen without touching history.
-function show(view, fromHistory) {
-  if (!fromHistory) {
-    const onOther = history.state && history.state.view;
-    if (view === "balance" && onOther) { history.back(); return; } // popstate shows Balance
-    if (view !== "balance") onOther ? history.replaceState({ view }, "") : history.pushState({ view }, "");
-  }
-  currentView = view;
+function show(view) {
   for (const s of document.querySelectorAll(".view")) s.hidden = s.id !== "view-" + view;
   for (const b of document.querySelectorAll(".tabs button")) b.classList.toggle("active", b.dataset.view === view);
   if (view === "balance") renderBalance();
   if (view === "table") renderTable();
   if (view === "lookup") renderLookup();
+  if (view === "add") renderPreview();
+  window.scrollTo(0, 0);
 }
 for (const b of document.querySelectorAll(".tabs button")) {
-  b.addEventListener("click", () => { show(b.dataset.view); window.scrollTo(0, 0); });
+  b.addEventListener("click", () => {
+    if (b.dataset.view === "add") resetAdd();
+    show(b.dataset.view);
+  });
 }
 
 // ---------- balance ----------
 function renderBalance() {
   $("balance-cards").innerHTML = TEAMS.map(t => {
     const s = summary(t);
-    return `<div class="card team-card ${CLS[t]}" data-team="${esc(t)}" role="button" tabindex="0">
-      <div class="name">${esc(t)} <span class="go">Table ›</span></div>
+    return `<div class="card team-card ${CLS[t]}">
+      <div class="name">${esc(t)}</div>
       <div class="num ${tone(s.bal)}">${signed(s.bal)}</div>
       <div class="stats">
         <div><b>${s.played}</b><span>of 38 played</span></div>
@@ -137,28 +126,110 @@ function renderBalance() {
       </div>
     </div>`;
   }).join("");
-  renderSeasonStatus();
+  renderBackupStatus();
 }
-// Tapping a team's card opens the Table for that team.
-function openTeamTable(e) {
-  const card = e.target.closest(".team-card");
-  if (!card || (e.type === "keydown" && e.key !== "Enter" && e.key !== " ")) return;
-  e.preventDefault();
-  tbTeam = card.dataset.team;
-  show("table");
-  window.scrollTo(0, 0);
+
+// ---------- add / edit ----------
+const add = { team: TEAMS[0], loc: "H", res: null, editing: false };
+
+function resetAdd() {
+  add.editing = false;
+  add.res = null;
+  $("add-s1").value = $("add-s2").value = "";
+  $("add-date").value = todayISO();
+  $("add-msg").textContent = "";
+  armDelete(false);
+  syncAddForm();
 }
-$("balance-cards").addEventListener("click", openTeamTable);
-$("balance-cards").addEventListener("keydown", openTeamTable);
-function renderSeasonStatus() {
-  const el = $("season-status");
-  el.className = "muted small";
-  if (seasonInfo.state === "loading") { el.textContent = "Loading this season's results…"; return; }
-  if (seasonInfo.state === "error") { el.className = "msg neg"; el.textContent = "Couldn't read this season's results: " + seasonInfo.message; return; }
-  const when = seasonInfo.exported ? ` · file updated ${shortDate(String(seasonInfo.exported).slice(0, 10))}` : "";
-  const skip = seasonInfo.skipped ? ` · ${seasonInfo.skipped} unrecognised entr${seasonInfo.skipped > 1 ? "ies" : "y"} ignored` : "";
-  el.textContent = `${seasonInfo.count} games this season${when}${skip}`;
+// Fill the score and date fields from a saved game (or blank score + today's date for a new one).
+function fillDetails(g) {
+  const [s1, s2] = g && g.score ? g.score.split("-") : ["", ""];
+  $("add-s1").value = s1 || ""; $("add-s2").value = s2 || "";
+  $("add-date").value = g ? g.date || "" : todayISO();
 }
+function openEdit(team, opp, loc) {
+  const g = games[key(team, opp, loc)];
+  add.team = team; add.loc = loc; add.editing = !!g;
+  add.res = g ? g.result : null;
+  fillDetails(g);
+  $("add-msg").textContent = "";
+  armDelete(false);
+  syncAddForm(opp);
+  show("add");
+}
+function syncAddForm(opp) {
+  makeSeg($("add-team"), TEAM_OPTS, add.team, v => { add.team = v; fillOpponents($("add-opp"), v, $("add-opp").value); slotChanged(); });
+  fillOpponents($("add-opp"), add.team, opp || $("add-opp").value);
+  makeSeg($("add-loc"), LOC_OPTS, add.loc, v => { add.loc = v; slotChanged(); });
+  makeSeg($("add-res"), RES_OPTS, add.res, v => { add.res = v; renderPreview(); });
+  renderPreview();
+}
+// When team/opponent/location changes, load that slot's existing entry (if any).
+function slotChanged() {
+  const g = games[key(add.team, $("add-opp").value, add.loc)];
+  add.editing = !!g;
+  add.res = g ? g.result : null;
+  fillDetails(g);
+  setSeg($("add-res"), add.res);
+  $("add-msg").textContent = "";
+  armDelete(false);
+  renderPreview();
+}
+$("add-opp").addEventListener("change", slotChanged);
+
+function renderPreview() {
+  const opp = $("add-opp").value;
+  const prev = lastSeason(add.team, opp, add.loc);
+  const existing = games[key(add.team, opp, add.loc)];
+  $("add-title").textContent = existing ? "Edit game" : "Add a game";
+  $("btn-save").textContent = existing ? "Save changes" : "Save game";
+  $("edit-actions").hidden = !existing;
+  $("btn-save").disabled = !add.res;
+
+  let html = prev
+    ? `Last season (${locName(add.loc)}): <b>${prev.result === "W" ? "Win" : "Loss"}</b> <span class="muted">${esc(shortDate(prev.date))}</span>`
+    : `No matching game last season.`;
+  if (add.res) {
+    const e = effect(prev, { result: add.res });
+    html += `<br>Effect on balance: <span class="eff ${tone(e)}">${signed(e)}</span>`;
+  }
+  if (existing) html += `<br><span class="muted">Already entered this season: ${existing.result === "W" ? "Win" : "Loss"}.</span>`;
+  $("add-preview").innerHTML = html;
+}
+
+$("btn-save").addEventListener("click", () => {
+  if (!add.res) return;
+  const opp = $("add-opp").value;
+  const s1 = $("add-s1").value.trim(), s2 = $("add-s2").value.trim();
+  const score = s1 && s2 ? `${parseInt(s1, 10)}-${parseInt(s2, 10)}` : "";
+  const date = $("add-date").value; // "YYYY-MM-DD" or "" if left empty
+  const wasEdit = !!games[key(add.team, opp, add.loc)];
+  games[key(add.team, opp, add.loc)] = { team: add.team, opponent: opp, location: add.loc, result: add.res, score, date, saved: new Date().toISOString() };
+  saveGames(games);
+  const e = effect(lastSeason(add.team, opp, add.loc), { result: add.res });
+  $("add-msg").innerHTML = `${wasEdit ? "Updated" : "Saved"}: ${SHORT[add.team]} vs ${esc(oppName(opp))} (${locName(add.loc)}) — balance now <span class="${tone(summary(add.team).bal)}">${signed(summary(add.team).bal)}</span> (${signed(e)})`;
+  armDelete(false);
+  renderPreview();
+});
+
+let deleteArmed = false;
+function armDelete(on) {
+  deleteArmed = on;
+  $("btn-delete").textContent = on ? "Tap again to delete" : "Delete this game";
+  $("btn-delete").classList.toggle("ghost", !on);
+}
+$("btn-delete").addEventListener("click", () => {
+  if (!deleteArmed) { armDelete(true); return; }
+  const opp = $("add-opp").value;
+  delete games[key(add.team, opp, add.loc)];
+  saveGames(games);
+  add.res = null; add.editing = false;
+  setSeg($("add-res"), null);
+  fillDetails(null);
+  $("add-msg").textContent = `Deleted ${SHORT[add.team]} vs ${oppName(opp)} (${locName(add.loc)}).`;
+  armDelete(false);
+  renderPreview();
+});
 
 // ---------- lookup ----------
 const lk = { team: TEAMS[0], loc: "H" };
@@ -184,8 +255,8 @@ function renderLookup() {
 
 // ---------- table ----------
 let tbTeam = TEAMS[0];
-let tbSort = "date-now";
-const SORT_OPTS = [{ label: "Date 26-27", value: "date-now" }, { label: "Date 25-26", value: "date" }, { label: "Opponent", value: "opp" }];
+let tbSort = "opp";
+const SORT_OPTS = [{ label: "Opponent", value: "opp" }, { label: "Date 25-26", value: "date" }, { label: "Date 26-27", value: "date-now" }];
 function renderTable() {
   makeSeg($("tb-team"), TEAM_OPTS, tbTeam, v => { tbTeam = v; renderTable(); });
   makeSeg($("tb-sort"), SORT_OPTS, tbSort, v => { tbSort = v; renderTable(); });
@@ -220,7 +291,7 @@ function renderTable() {
       else if (prev) subText = shortDate(prev.date);
     }
     const sub = subText ? `<div class="sub-date">${esc(subText)}</div>` : "";
-    rows += `<tr>
+    rows += `<tr data-opp="${esc(opp)}" data-loc="${loc}">
       <td>${esc(oppName(opp))}${sub}</td><td>${loc}</td><td>${chip(prev)}</td><td>${chip(now)}</td>
       <td class="${e === null ? "dash" : tone(e)}">${e === null ? "" : signed(e)}</td></tr>`;
   }
@@ -228,13 +299,98 @@ function renderTable() {
   const s = summary(tbTeam);
   $("tb-foot").innerHTML = `<tr><td colspan="3">Balance (${s.played} played)</td><td></td><td class="${tone(total)}">${signed(total)}</td></tr>`;
 }
+$("tb-body").addEventListener("click", e => {
+  const tr = e.target.closest("tr");
+  if (tr) openEdit(tbTeam, tr.dataset.opp, tr.dataset.loc);
+});
+
+// ---------- backup ----------
+function renderBackupStatus() {
+  let last = null;
+  try { last = localStorage.getItem(BACKUP_KEY); } catch {}
+  const n = Object.keys(games).length;
+  if (!last) { $("backup-status").textContent = n ? `${n} games saved on this phone. No backup yet.` : "Nothing to back up yet."; return; }
+  const days = Math.floor((Date.now() - new Date(last)) / 864e5);
+  $("backup-status").textContent = `${n} games saved. Last backup: ${days === 0 ? "today" : days + " day" + (days > 1 ? "s" : "") + " ago"}.`;
+}
+// Android's share menu only accepts certain file types (not .json), so on phones the
+// backup is shared as a .txt file (same JSON content). Computers get a normal download.
+const isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
+function downloadBackup(text, name) {
+  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+function backupMsg(text, isError) {
+  $("backup-msg").textContent = text;
+  $("backup-msg").className = "msg" + (isError ? " neg" : "");
+}
+$("btn-export").addEventListener("click", async () => {
+  const data = { app: "euroleague-balance", version: 1, exported: new Date().toISOString(), games: Object.values(games) };
+  const text = JSON.stringify(data, null, 2);
+  const base = `euroleague-balance-${new Date().toISOString().slice(0, 10)}`;
+  backupMsg("");
+  try {
+    const file = new File([text], base + ".txt", { type: "text/plain" });
+    if (isPhone && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: "EuroLeague Balance backup" });
+        backupMsg("Backup shared. Save it somewhere safe, e.g. Google Drive.");
+      } catch (err) {
+        if (err && err.name === "AbortError") { backupMsg("Backup cancelled."); return; }
+        downloadBackup(text, base + ".json");
+        backupMsg("Sharing didn't work, so the backup was downloaded instead (check Downloads).");
+      }
+    } else {
+      downloadBackup(text, base + ".json");
+      backupMsg("Backup downloaded (check your Downloads folder).");
+    }
+    try { localStorage.setItem(BACKUP_KEY, new Date().toISOString()); } catch {}
+  } catch (err) {
+    backupMsg("Backup failed: " + (err && err.message ? err.message : err), true);
+  }
+  renderBackupStatus();
+});
+
+let pendingImport = null;
+$("btn-import").addEventListener("click", () => $("import-file").click());
+$("import-file").addEventListener("change", async e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (data.app !== "euroleague-balance" || !Array.isArray(data.games)) throw new Error("bad");
+    const valid = data.games.filter(g => TEAMS.includes(g.team) && opponentsFor(g.team).includes(RENAMED[g.opponent] || g.opponent)
+      && (g.location === "H" || g.location === "A") && (g.result === "W" || g.result === "L"));
+    pendingImport = valid;
+    $("import-msg").textContent = `This backup has ${valid.length} games (from ${String(data.exported || "").slice(0, 10)}). It will replace the ${Object.keys(games).length} games on this phone.`;
+    $("import-confirm").hidden = false;
+  } catch {
+    pendingImport = null;
+    $("import-msg").textContent = "That file isn't a EuroLeague Balance backup.";
+    $("import-confirm").hidden = false;
+    $("btn-import-yes").hidden = true;
+    return;
+  }
+  $("btn-import-yes").hidden = false;
+});
+$("btn-import-yes").addEventListener("click", () => {
+  if (!pendingImport) return;
+  games = migrate(pendingImport);
+  saveGames(games);
+  pendingImport = null;
+  $("import-confirm").hidden = true;
+  renderBalance();
+});
+$("btn-import-no").addEventListener("click", () => { pendingImport = null; $("import-confirm").hidden = true; });
 
 // ---------- start ----------
+syncAddForm();
 initLookup();
-if (history.state && history.state.view) history.replaceState(null, ""); // reopened on another screen's entry
-window.addEventListener("popstate", () => { show("balance", true); window.scrollTo(0, 0); });
-show("balance", true);
-loadSeason().then(() => show(currentView, true));
+show("balance");
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
