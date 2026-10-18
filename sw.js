@@ -1,10 +1,13 @@
 // Caches the app files so it opens instantly and works offline.
 // Bump CACHE when any app file changes, so phones pick up the new version.
-const CACHE = "elb-v16";
+const CACHE = "elb-v17";
 const FILES = ["./", "index.html", "style.css", "app.js", "data-2025-26.js", "season-2026-27.json", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache: "reload" skips the browser's short-term cache (GitHub Pages allows 10 minutes),
+  // so a new version never stores old copies of the files.
+  const fresh = FILES.map(f => new Request(f, { cache: "reload" }));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(fresh)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys()
