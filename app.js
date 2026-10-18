@@ -103,7 +103,14 @@ const LOC_OPTS = [{ label: "Home", value: "H" }, { label: "Away", value: "A" }];
 
 // ---------- tabs ----------
 let currentView = "balance";
-function show(view) {
+// The phone's Back button: other screens add one history entry, so Back returns to Balance
+// first and only leaves the app from there. Pass fromHistory to show a screen without touching history.
+function show(view, fromHistory) {
+  if (!fromHistory) {
+    const onOther = history.state && history.state.view;
+    if (view === "balance" && onOther) { history.back(); return; } // popstate shows Balance
+    if (view !== "balance") onOther ? history.replaceState({ view }, "") : history.pushState({ view }, "");
+  }
   currentView = view;
   for (const s of document.querySelectorAll(".view")) s.hidden = s.id !== "view-" + view;
   for (const b of document.querySelectorAll(".tabs button")) b.classList.toggle("active", b.dataset.view === view);
@@ -224,8 +231,10 @@ function renderTable() {
 
 // ---------- start ----------
 initLookup();
-show("balance");
-loadSeason().then(() => show(currentView));
+if (history.state && history.state.view) history.replaceState(null, ""); // reopened on another screen's entry
+window.addEventListener("popstate", () => { show("balance", true); window.scrollTo(0, 0); });
+show("balance", true);
+loadSeason().then(() => show(currentView, true));
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
