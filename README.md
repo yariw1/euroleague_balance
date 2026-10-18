@@ -26,8 +26,8 @@ Only regular-season games are tracked. Play-in and playoff games aren't included
 ## Screens
 
 - **Balance**: each team's current balance and how many games were better, worse or the same. Below the cards it shows how many games were read from the results file and when the file was last updated.
-- **Look up**: pick any game to see both seasons side by side.
 - **Table**: all 38 games for a team, sorted by opponent, by last season's date, or by this season's date (games not played yet come after, in last season's order).
+- **Look up**: pick any game to see both seasons side by side.
 
 ## This season's results
 
@@ -73,7 +73,7 @@ The app downloads the file each time it opens. Without internet it uses the last
 
 ## Updating the app
 
-After changing any file, change the version in `sw.js` (for example `elb-v8` → `elb-v9`) and upload the changed files to GitHub. Phones then pick up the new version the next time the app is opened with internet (sometimes it takes a second open). You don't need to change the version when you only update `season-2026-27.json`; the app always fetches the latest one.
+After changing any file, change the version in `sw.js` (for example `elb-v10` → `elb-v11`) and upload the changed files to GitHub. Phones then pick up the new version the next time the app is opened with internet (sometimes it takes a second open). You don't need to change the version when you only update `season-2026-27.json`; the app always fetches the latest one.
 
 ## Data source
 

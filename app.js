@@ -98,7 +98,7 @@ function fillOpponents(select, team, keep) {
   select.innerHTML = opps.map(o => `<option value="${esc(o)}">${esc(oppName(o))}</option>`).join("");
   if (keep && opps.includes(keep)) select.value = keep;
 }
-const TEAM_OPTS = TEAMS.map(t => ({ label: SHORT[t], value: t }));
+const TEAM_OPTS = TEAMS.map(t => ({ label: SHORT[t], value: t, cls: CLS[t] }));
 const LOC_OPTS = [{ label: "Home", value: "H" }, { label: "Away", value: "A" }];
 
 // ---------- tabs ----------

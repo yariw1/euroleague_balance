@@ -84,6 +84,12 @@ select {
 }
 .seg button.on { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.15); font-weight: 700; }
 .seg.wide { margin-bottom: 12px; }
+/* Team buttons: faint team colour when not chosen, solid team colour with a tick when chosen. */
+.seg button.hapoel, .seg button.maccabi { background: color-mix(in srgb, var(--team) 14%, transparent); opacity: .75; }
+.seg button.hapoel.on, .seg button.maccabi.on { background: var(--team); opacity: 1; box-shadow: 0 0 0 2px var(--text); }
+.seg button.hapoel.on { color: #fff; }
+.seg button.maccabi.on { color: #171a26; }
+.seg button.hapoel.on::before, .seg button.maccabi.on::before { content: "✓ "; }
 
 .msg { min-height: 1.2em; margin: 10px 0 0; font-weight: 600; }
 
