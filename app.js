@@ -119,8 +119,8 @@ for (const b of document.querySelectorAll(".tabs button")) {
 function renderBalance() {
   $("balance-cards").innerHTML = TEAMS.map(t => {
     const s = summary(t);
-    return `<div class="card team-card ${CLS[t]}">
-      <div class="name">${esc(t)}</div>
+    return `<div class="card team-card ${CLS[t]}" data-team="${esc(t)}" role="button" tabindex="0">
+      <div class="name">${esc(t)} <span class="go">Table ›</span></div>
       <div class="num ${tone(s.bal)}">${signed(s.bal)}</div>
       <div class="stats">
         <div><b>${s.played}</b><span>of 38 played</span></div>
@@ -132,6 +132,17 @@ function renderBalance() {
   }).join("");
   renderSeasonStatus();
 }
+// Tapping a team's card opens the Table for that team.
+function openTeamTable(e) {
+  const card = e.target.closest(".team-card");
+  if (!card || (e.type === "keydown" && e.key !== "Enter" && e.key !== " ")) return;
+  e.preventDefault();
+  tbTeam = card.dataset.team;
+  show("table");
+  window.scrollTo(0, 0);
+}
+$("balance-cards").addEventListener("click", openTeamTable);
+$("balance-cards").addEventListener("keydown", openTeamTable);
 function renderSeasonStatus() {
   const el = $("season-status");
   el.className = "muted small";
@@ -166,8 +177,8 @@ function renderLookup() {
 
 // ---------- table ----------
 let tbTeam = TEAMS[0];
-let tbSort = "opp";
-const SORT_OPTS = [{ label: "Opponent", value: "opp" }, { label: "Date 25-26", value: "date" }, { label: "Date 26-27", value: "date-now" }];
+let tbSort = "date-now";
+const SORT_OPTS = [{ label: "Date 26-27", value: "date-now" }, { label: "Date 25-26", value: "date" }, { label: "Opponent", value: "opp" }];
 function renderTable() {
   makeSeg($("tb-team"), TEAM_OPTS, tbTeam, v => { tbTeam = v; renderTable(); });
   makeSeg($("tb-sort"), SORT_OPTS, tbSort, v => { tbSort = v; renderTable(); });
