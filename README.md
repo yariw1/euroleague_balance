@@ -31,6 +31,13 @@ Only regular-season games are tracked. Play-in and playoff games aren't included
 
 ## This season's results
 
+**It updates itself.** Every night at 03:00 UTC a GitHub Action (`.github/workflows/update-season.yml`) runs `update-season.js`. The script downloads all played regular-season games of both teams from the official EuroLeague API (`api-live.euroleague.net`), with scores and dates. When there's a new result, the Action saves `season-2026-27.json` to the repo, and GitHub Pages publishes it a minute or two later.
+
+- **Update right away** (for example just after a game): on GitHub open **Actions** → **Update season results** → **Run workflow**.
+- **If it stops running:** GitHub turns off scheduled Actions in public repos after 60 days without activity and sends an email first. Turn it back on from the Actions tab.
+- **If a new club joins the league:** the run log says which club code is unknown. Add it to `CLUBS` in `update-season.js`.
+- You can also run `node update-season.js` on your computer (Node 18 or newer) and upload the file yourself.
+
 The app reads this season's results from `season-2026-27.json`. It's the same format the old "Export backup" button made, so an old backup file can be used as is (rename it to `season-2026-27.json`). Add games to it as the season goes on and upload it to GitHub; partial results are fine.
 
 ```json
@@ -67,6 +74,8 @@ The app downloads the file each time it opens. Without internet it uses the last
 | `style.css` | Look and layout (light and dark mode) |
 | `data-2025-26.js` | Last season's 76 results and the Monaco → Besiktas mapping |
 | `season-2026-27.json` | This season's results (you update this file) |
+| `update-season.js` | Fills `season-2026-27.json` from the EuroLeague API (not part of the app) |
+| `.github/workflows/update-season.yml` | Runs `update-season.js` every night on GitHub and saves the file |
 | `manifest.webmanifest` | App name, icon and colors for installing |
 | `sw.js` | Keeps a copy of the app on the phone so it opens offline |
 | `icons/` | App icons |

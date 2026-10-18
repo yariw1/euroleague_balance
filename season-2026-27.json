@@ -1,115 +1,103 @@
 {
   "app": "euroleague-balance",
   "version": 1,
-  "exported": "2026-10-18T10:54:29.310Z",
+  "exported": "2026-10-18T14:37:29.128Z",
   "games": [
     {
       "team": "Hapoel Tel Aviv",
       "opponent": "Bayern Munich",
       "location": "H",
       "result": "L",
-      "score": "",
-      "date": "2026-09-24",
-      "saved": "2026-10-18T07:12:54.321Z"
-    },
-    {
-      "team": "Hapoel Tel Aviv",
-      "opponent": "Crvena Zvezda",
-      "location": "A",
-      "result": "W",
-      "score": "",
-      "date": "2026-09-29",
-      "saved": "2026-10-18T07:13:08.706Z"
-    },
-    {
-      "team": "Hapoel Tel Aviv",
-      "opponent": "Real Madrid",
-      "location": "H",
-      "result": "W",
-      "score": "",
-      "date": "2026-10-01",
-      "saved": "2026-10-18T07:12:13.136Z"
-    },
-    {
-      "team": "Hapoel Tel Aviv",
-      "opponent": "Valencia",
-      "location": "A",
-      "result": "L",
-      "score": "",
-      "date": "2026-10-08",
-      "saved": "2026-10-18T07:11:32.553Z"
-    },
-    {
-      "team": "Hapoel Tel Aviv",
-      "opponent": "Besiktas",
-      "location": "H",
-      "result": "W",
-      "score": "",
-      "date": "2026-10-14",
-      "saved": "2026-10-18T07:11:51.734Z"
+      "score": "84-86",
+      "date": "2026-09-24"
     },
     {
       "team": "Maccabi Tel Aviv",
       "opponent": "Villeurbanne",
       "location": "A",
       "result": "L",
-      "score": "",
-      "date": "2026-09-24",
-      "saved": "2026-10-18T07:15:28.569Z"
+      "score": "74-84",
+      "date": "2026-09-24"
+    },
+    {
+      "team": "Hapoel Tel Aviv",
+      "opponent": "Crvena Zvezda",
+      "location": "A",
+      "result": "W",
+      "score": "81-80",
+      "date": "2026-09-29"
     },
     {
       "team": "Maccabi Tel Aviv",
       "opponent": "Besiktas",
       "location": "H",
       "result": "L",
-      "score": "",
-      "date": "2026-09-30",
-      "saved": "2026-10-18T07:14:25.522Z"
+      "score": "93-109",
+      "date": "2026-09-30"
+    },
+    {
+      "team": "Hapoel Tel Aviv",
+      "opponent": "Real Madrid",
+      "location": "H",
+      "result": "W",
+      "score": "102-98",
+      "date": "2026-10-01"
     },
     {
       "team": "Maccabi Tel Aviv",
       "opponent": "Panathinaikos",
       "location": "A",
       "result": "L",
-      "score": "",
-      "date": "2026-10-02",
-      "saved": "2026-10-18T07:13:59.272Z"
+      "score": "67-90",
+      "date": "2026-10-02"
+    },
+    {
+      "team": "Hapoel Tel Aviv",
+      "opponent": "Valencia",
+      "location": "A",
+      "result": "L",
+      "score": "82-93",
+      "date": "2026-10-08"
     },
     {
       "team": "Maccabi Tel Aviv",
       "opponent": "Milan",
       "location": "H",
       "result": "W",
-      "score": "",
-      "date": "2026-10-08",
-      "saved": "2026-10-18T07:14:46.147Z"
+      "score": "97-79",
+      "date": "2026-10-08"
     },
     {
       "team": "Maccabi Tel Aviv",
       "opponent": "Barcelona",
       "location": "A",
       "result": "L",
-      "score": "",
-      "date": "2026-10-13",
-      "saved": "2026-10-18T07:15:00.467Z"
+      "score": "87-90",
+      "date": "2026-10-13"
+    },
+    {
+      "team": "Hapoel Tel Aviv",
+      "opponent": "Besiktas",
+      "location": "H",
+      "result": "W",
+      "score": "100-82",
+      "date": "2026-10-14"
     },
     {
       "team": "Maccabi Tel Aviv",
       "opponent": "Valencia",
       "location": "A",
       "result": "W",
-      "score": "",
-      "date": "2026-10-15",
-      "saved": "2026-10-18T07:15:11.931Z"
+      "score": "91-88",
+      "date": "2026-10-15"
     },
     {
       "team": "Hapoel Tel Aviv",
       "opponent": "Panathinaikos",
       "location": "A",
       "result": "W",
-      "score": "",
-      "date": "2026-10-16",
-      "saved": "2026-10-18T07:12:28.875Z"
+      "score": "91-81",
+      "date": "2026-10-16"
     }
   ]
 }
