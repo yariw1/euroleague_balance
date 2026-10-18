@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14182b">
-<title>EuroLeague Balance</title>
+<title>מאזן יורוליג</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -12,71 +12,30 @@
 </head>
 <body>
 <header class="top">
-  <h1>EuroLeague Balance</h1>
-  <span class="sub">2026-27 vs 2025-26</span>
+  <button type="button" id="lang-btn" class="lang-btn" aria-label="Switch to English">EN</button>
+  <div class="top-text">
+    <h1 data-i18n="title">מאזן יורוליג</h1>
+    <span class="sub" data-i18n="sub">2026-27 מול 2025-26</span>
+  </div>
 </header>
 
 <main>
   <!-- BALANCE -->
   <section id="view-balance" class="view">
+    <p class="intro muted small" data-i18n-html="intro">התוצאות של כל קבוצה ביורוליג 2026-27 בהשוואה לאותם משחקים ב־2025-26: <b class="neg"><bdi dir="ltr">+1</bdi></b> על תוצאה טובה יותר, <b class="neg"><bdi dir="ltr">−1</bdi></b> על תוצאה גרועה יותר. בשיקטאש החליפה את מונאקו, ולכן המשחקים מולה מושווים למשחקים מול מונאקו בעונה שעברה.</p>
     <div id="balance-cards"></div>
-    <div class="card backup">
-      <h2>Backup</h2>
-      <p class="muted" id="backup-status"></p>
-      <div class="row">
-        <button class="btn" id="btn-export">Export backup</button>
-        <button class="btn ghost" id="btn-import">Import backup</button>
-      </div>
-      <p id="backup-msg" class="msg" role="status"></p>
-      <input type="file" id="import-file" accept=".json,.txt,application/json,text/plain" hidden>
-      <div id="import-confirm" class="confirm" hidden>
-        <p id="import-msg"></p>
-        <div class="row">
-          <button class="btn danger" id="btn-import-yes">Replace my data</button>
-          <button class="btn ghost" id="btn-import-no">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ADD / EDIT -->
-  <section id="view-add" class="view" hidden>
-    <div class="card">
-      <h2 id="add-title">Add a game</h2>
-      <label class="lbl">Team</label>
-      <div class="seg" id="add-team"></div>
-      <label class="lbl" for="add-opp">Opponent</label>
-      <select id="add-opp"></select>
-      <label class="lbl">Location</label>
-      <div class="seg" id="add-loc"></div>
-      <label class="lbl">Result</label>
-      <div class="seg" id="add-res"></div>
-      <label class="lbl">Score <span class="muted">(optional)</span></label>
-      <div class="score-row">
-        <input type="number" inputmode="numeric" id="add-s1" placeholder="Team">
-        <span>–</span>
-        <input type="number" inputmode="numeric" id="add-s2" placeholder="Opp.">
-      </div>
-      <label class="lbl" for="add-date">Date <span class="muted">(optional)</span></label>
-      <input type="date" id="add-date">
-      <div id="add-preview" class="preview"></div>
-      <button class="btn big" id="btn-save">Save game</button>
-      <div class="row" id="edit-actions" hidden>
-        <button class="btn danger ghost" id="btn-delete">Delete this game</button>
-      </div>
-      <p id="add-msg" class="msg" role="status"></p>
-    </div>
+    <p id="season-status" class="muted small"></p>
   </section>
 
   <!-- LOOKUP -->
   <section id="view-lookup" class="view" hidden>
     <div class="card">
-      <h2>Look up a game</h2>
-      <label class="lbl">Team</label>
+      <h2 data-i18n="lookupTitle">חיפוש משחק</h2>
+      <label class="lbl" data-i18n="team">קבוצה</label>
       <div class="seg" id="lk-team"></div>
-      <label class="lbl" for="lk-opp">Opponent</label>
+      <label class="lbl" for="lk-opp" data-i18n="opponent">יריבה</label>
       <select id="lk-opp"></select>
-      <label class="lbl">Location</label>
+      <label class="lbl" data-i18n="location">מיקום</label>
       <div class="seg" id="lk-loc"></div>
       <div id="lk-result" class="compare"></div>
     </div>
@@ -88,20 +47,18 @@
     <div class="seg wide" id="tb-sort"></div>
     <div class="table-wrap">
       <table class="games">
-        <thead><tr><th>Opponent</th><th>H/A</th><th>25-26</th><th>26-27</th><th>±</th></tr></thead>
+        <thead><tr><th data-i18n="opponent">יריבה</th><th data-i18n-html="homeAway">בית/<br>חוץ</th><th>25-26</th><th>26-27</th><th>±</th></tr></thead>
         <tbody id="tb-body"></tbody>
         <tfoot id="tb-foot"></tfoot>
       </table>
     </div>
-    <p class="muted small">Tap a row to add or edit this season's result.</p>
   </section>
 </main>
 
 <nav class="tabs">
-  <button data-view="balance" class="active"><span class="ico">⚖️</span>Balance</button>
-  <button data-view="add"><span class="ico">➕</span>Add</button>
-  <button data-view="lookup"><span class="ico">🔍</span>Look up</button>
-  <button data-view="table"><span class="ico">📋</span>Table</button>
+  <button data-view="balance" class="active"><span class="ico">⚖️</span><span data-i18n="tabBalance">מאזן</span></button>
+  <button data-view="table"><span class="ico">📋</span><span data-i18n="tabTable">טבלה</span></button>
+  <button data-view="lookup"><span class="ico">🔍</span><span data-i18n="tabLookup">חיפוש</span></button>
 </nav>
 
 <script src="data-2025-26.js"></script>

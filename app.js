@@ -1,42 +1,86 @@
 // EuroLeague Balance — compares 2026-27 results with the same games in 2025-26.
-// This season's games are stored only on this device (localStorage).
+// This season's games are read from season-2026-27.json (same format as the old backup export).
 
-const STORE_KEY = "elb.games.v1";
-const BACKUP_KEY = "elb.lastBackup";
-const SHORT = { "Hapoel Tel Aviv": "Hapoel", "Maccabi Tel Aviv": "Maccabi" };
+const SEASON_FILE = "season-2026-27.json";
 const CLS = { "Hapoel Tel Aviv": "hapoel", "Maccabi Tel Aviv": "maccabi" };
 
-// ---------- storage ----------
-function loadGames() {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
-}
-function saveGames(games) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(games));
-}
-const key = (team, opp, loc) => `${team}|${opp}|${loc}`;
-// Opponents that were renamed in the app (old saved name -> current name).
-const RENAMED = { "ASVEL": "Villeurbanne" };
-function migrate(list) {
-  const out = {};
-  for (const g of list) {
-    if (RENAMED[g.opponent]) g.opponent = RENAMED[g.opponent];
-    out[key(g.team, g.opponent, g.location)] = g;
-  }
-  return out;
-}
+// ---------- language ----------
+// The data keeps the English names as keys; Hebrew names are only for display.
+const HE_NAMES = {
+  "Hapoel Tel Aviv": "הפועל תל אביב", "Maccabi Tel Aviv": "מכבי תל אביב",
+  "Real Madrid": "ריאל מדריד", "Barcelona": "ברצלונה", "Anadolu Efes": "אנאדולו אפס",
+  "Paris": "פאריס", "Valencia": "ולנסיה", "Olympiacos": "אולימפיאקוס", "Monaco": "מונאקו",
+  "Panathinaikos": "פנאתינייקוס", "Partizan": "פרטיזן", "Crvena Zvezda": "הכוכב האדום",
+  "Dubai": "דובאי", "Fenerbahçe": "פנרבחצ'ה", "Baskonia": "באסקוניה", "Milan": "מילאנו",
+  "Virtus Bologna": "וירטוס בולוניה", "Žalgiris": "ז'לגיריס", "Villeurbanne": "וילרבאן",
+  "Bayern Munich": "באיירן מינכן", "Besiktas": "בשיקטאש",
+};
+const TEXT = {
+  he: {
+    dir: "rtl", locale: "he-IL", switchTo: "EN", switchLabel: "Switch to English",
+    title: "מאזן יורוליג", sub: "2026-27 מול 2025-26",
+    intro: 'התוצאות של כל קבוצה ביורוליג 2026-27 בהשוואה לאותם משחקים ב־2025-26: <b class="neg"><bdi dir="ltr">+1</bdi></b> על תוצאה טובה יותר, <b class="neg"><bdi dir="ltr">−1</bdi></b> על תוצאה גרועה יותר. בשיקטאש החליפה את מונאקו, ולכן המשחקים מולה מושווים למשחקים מול מונאקו בעונה שעברה.',
+    lookupTitle: "חיפוש משחק", team: "קבוצה", opponent: "יריבה", location: "מיקום", homeAway: "בית/<br>חוץ",
+    tabBalance: "מאזן", tabTable: "טבלה", tabLookup: "חיפוש",
+    short: { "Hapoel Tel Aviv": "הפועל", "Maccabi Tel Aviv": "מכבי" },
+    name: n => HE_NAMES[n] || n,
+    res: { W: "ניצחון", L: "הפסד" }, loc: { H: "בית", A: "חוץ" },
+    toTable: "לטבלה ‹", played: "משחקים מתוך 38", better: "שיפור", worse: "נסיגה", same: "ללא שינוי",
+    loading: "טוען את תוצאות העונה…", loadError: "לא ניתן לקרוא את תוצאות העונה: ",
+    openedAsFile: "האפליקציה נפתחה כקובץ. יש לפתוח אותה מכתובת האתר (GitHub Pages) או משרת מקומי.",
+    notFound: (f, st) => `הקובץ ${f} לא נמצא (${st})`, noGames: f => `בקובץ ${f} אין רשימת "games"`,
+    updated: d => ` · הקובץ עודכן ב־${d}`,
+    skipped: n => ` · ${n > 1 ? `${n} רשומות לא מזוהות` : "רשומה לא מזוהה אחת"} לא נכללו`,
+    count: n => `${n} משחקים העונה`,
+    notPlayed: "עוד לא שוחק", round: r => "מחזור " + r, effect: "השפעה: ",
+    sortNow: "תאריך 26-27", sortPrev: "תאריך 25-26", sortOpp: "יריבה",
+    total: n => `מאזן (${n} שוחקו)`,
+  },
+  en: {
+    dir: "ltr", locale: "en-GB", switchTo: "עב", switchLabel: "עברית",
+    title: "EuroLeague Balance", sub: "2026-27 vs 2025-26",
+    intro: "Each team's 2026-27 EuroLeague results compared with the same games in 2025-26: <b class=\"neg\">+1</b> for a better result, <b class=\"neg\">−1</b> for a worse one. Besiktas replaced Monaco, so its games are compared with last season's Monaco games.",
+    lookupTitle: "Look up a game", team: "Team", opponent: "Opponent", location: "Location", homeAway: "Home/<br>Away",
+    tabBalance: "Balance", tabTable: "Table", tabLookup: "Look up",
+    short: { "Hapoel Tel Aviv": "Hapoel", "Maccabi Tel Aviv": "Maccabi" },
+    name: n => n,
+    res: { W: "Win", L: "Loss" }, loc: { H: "Home", A: "Away" },
+    toTable: "Table ›", played: "of 38 played", better: "better", worse: "worse", same: "same",
+    loading: "Loading this season's results…", loadError: "Couldn't read this season's results: ",
+    openedAsFile: "the app was opened as a file. Open it from its web address (GitHub Pages) or a local server instead.",
+    notFound: (f, st) => `${f} not found (${st})`, noGames: f => `${f} has no "games" list`,
+    updated: d => ` · file updated ${d}`,
+    skipped: n => ` · ${n} unrecognised entr${n > 1 ? "ies" : "y"} ignored`,
+    count: n => `${n} games this season`,
+    notPlayed: "Not played yet", round: r => "Rd " + r, effect: "Effect: ",
+    sortNow: "Date 26-27", sortPrev: "Date 25-26", sortOpp: "Opponent",
+    total: n => `Balance (${n} played)`,
+  },
+};
+const LANG_KEY = "elb-lang";
+let lang = "he";
+try { if (TEXT[localStorage.getItem(LANG_KEY)]) lang = localStorage.getItem(LANG_KEY); } catch (e) {}
+const T = () => TEXT[lang];
 
-let games = loadGames(); // key "team|opponent|H" -> {team, opponent, location, result, score, date, saved}
-if (Object.values(games).some(g => RENAMED[g.opponent])) { games = migrate(Object.values(games)); saveGames(games); }
-if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+// W/L in a green/red chip (same letters in both languages).
+const resChip = g => `<span class="chip ${g.result}" title="${T().res[g.result]}" aria-label="${T().res[g.result]}">${g.result}</span>`;
+
+const key = (team, opp, loc) => `${team}|${opp}|${loc}`;
+// Opponents that were renamed in the app (old name -> current name).
+const RENAMED = { "ASVEL": "Villeurbanne" };
+
+let games = {}; // key "team|opponent|H" -> {team, opponent, location, result, score, date}
+let seasonInfo = { state: "loading" }; // "loading" | "ok" (+ exported, count, skipped) | "error" (+ message)
+
 // Display name: a replaced team shows both names, e.g. "Monaco/Besiktas".
-const oppName = opp => (OPPONENT_ALIAS[opp] ? `${OPPONENT_ALIAS[opp]}/${opp}` : opp);
+const oppName = opp => (OPPONENT_ALIAS[opp] ? `${T().name(OPPONENT_ALIAS[opp])}/${T().name(opp)}` : T().name(opp));
 
 // ---------- season data ----------
 function opponentsFor(team) {
   // This season's opponents: last season's list with aliases swapped in (Monaco -> Besiktas).
   const reverse = Object.fromEntries(Object.entries(OPPONENT_ALIAS).map(([now, then]) => [then, now]));
   const names = [...new Set(LAST_SEASON.filter(g => g.team === team).map(g => reverse[g.opponent] || g.opponent))];
-  return names.sort((a, b) => oppName(a).localeCompare(oppName(b)));
+  return names.sort((a, b) => oppName(a).localeCompare(oppName(b), lang));
 }
 function lastSeason(team, opp, loc) {
   const then = OPPONENT_ALIAS[opp] || opp;
@@ -58,16 +102,38 @@ function summary(team) {
   return { bal, played, better, worse, same };
 }
 
+// Reads this season's results file. Entries that don't match a known game are skipped.
+async function loadSeason() {
+  try {
+    const res = await fetch(SEASON_FILE, { cache: "no-store" });
+    if (!res.ok) throw { notFound: res.status };
+    const data = await res.json();
+    if (!data || !Array.isArray(data.games)) throw { noGames: true };
+    const out = {};
+    let skipped = 0;
+    for (const g of data.games) {
+      if (g && RENAMED[g.opponent]) g.opponent = RENAMED[g.opponent];
+      const ok = g && TEAMS.includes(g.team) && opponentsFor(g.team).includes(g.opponent)
+        && (g.location === "H" || g.location === "A") && (g.result === "W" || g.result === "L");
+      if (ok) out[key(g.team, g.opponent, g.location)] = g; else skipped++;
+    }
+    games = out;
+    seasonInfo = { state: "ok", exported: data.exported || "", count: Object.keys(out).length, skipped };
+  } catch (err) {
+    // Browsers don't let a page opened straight from disk (file://) read other files.
+    seasonInfo = { state: "error", err, file: location.protocol === "file:" };
+  }
+}
+
 // ---------- helpers ----------
 const $ = id => document.getElementById(id);
-const signed = n => (n > 0 ? "+" + n : String(n));
+// Wrapped in left-to-right isolate marks so "+1" doesn't show as "1+" in the right-to-left page.
+const signed = n => "⁦" + (n > 0 ? "+" + n : String(n)) + "⁩";
 const tone = n => (n > 0 ? "pos" : n < 0 ? "neg" : "zero");
-const locName = l => (l === "H" ? "Home" : "Away");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 // Dates: last season uses "4 December 2025", this season "2026-10-16" (read as a local date).
 const toTime = d => (!d ? NaN : new Date(/^\d{4}-\d{2}-\d{2}$/.test(d) ? d + "T00:00" : d).getTime());
-const shortDate = d => { const t = toTime(d); return isNaN(t) ? (d || "") : new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" }); };
-const todayISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const shortDate = d => { const t = toTime(d); return isNaN(t) ? (d || "") : new Date(t).toLocaleDateString(T().locale, { day: "numeric", month: "short", year: "2-digit" }); };
 
 function makeSeg(el, options, value, onChange) {
   el.innerHTML = "";
@@ -90,176 +156,106 @@ function fillOpponents(select, team, keep) {
   select.innerHTML = opps.map(o => `<option value="${esc(o)}">${esc(oppName(o))}</option>`).join("");
   if (keep && opps.includes(keep)) select.value = keep;
 }
-const TEAM_OPTS = TEAMS.map(t => ({ label: SHORT[t], value: t }));
-const LOC_OPTS = [{ label: "Home", value: "H" }, { label: "Away", value: "A" }];
-const RES_OPTS = [{ label: "Win", value: "W", cls: "w" }, { label: "Loss", value: "L", cls: "l" }];
+const teamOpts = () => TEAMS.map(t => ({ label: T().short[t], value: t, cls: CLS[t] }));
+const locOpts = () => [{ label: T().loc.H, value: "H" }, { label: T().loc.A, value: "A" }];
 
 // ---------- tabs ----------
-function show(view) {
+let currentView = "balance";
+// The phone's Back button: other screens add one history entry, so Back returns to Balance
+// first and only leaves the app from there. Pass fromHistory to show a screen without touching history.
+function show(view, fromHistory) {
+  if (!fromHistory) {
+    const onOther = history.state && history.state.view;
+    if (view === "balance" && onOther) { history.back(); return; } // popstate shows Balance
+    if (view !== "balance") onOther ? history.replaceState({ view }, "") : history.pushState({ view }, "");
+  }
+  currentView = view;
   for (const s of document.querySelectorAll(".view")) s.hidden = s.id !== "view-" + view;
   for (const b of document.querySelectorAll(".tabs button")) b.classList.toggle("active", b.dataset.view === view);
   if (view === "balance") renderBalance();
   if (view === "table") renderTable();
   if (view === "lookup") renderLookup();
-  if (view === "add") renderPreview();
-  window.scrollTo(0, 0);
 }
 for (const b of document.querySelectorAll(".tabs button")) {
-  b.addEventListener("click", () => {
-    if (b.dataset.view === "add") resetAdd();
-    show(b.dataset.view);
-  });
+  b.addEventListener("click", () => { show(b.dataset.view); window.scrollTo(0, 0); });
 }
 
 // ---------- balance ----------
 function renderBalance() {
   $("balance-cards").innerHTML = TEAMS.map(t => {
     const s = summary(t);
-    return `<div class="card team-card ${CLS[t]}">
-      <div class="name">${esc(t)}</div>
+    return `<div class="card team-card ${CLS[t]}" data-team="${esc(t)}" role="button" tabindex="0">
+      <div class="name">${esc(T().name(t))} <span class="go">${T().toTable}</span></div>
       <div class="num ${tone(s.bal)}">${signed(s.bal)}</div>
       <div class="stats">
-        <div><b>${s.played}</b><span>of 38 played</span></div>
-        <div><b class="pos">${s.better}</b><span>better</span></div>
-        <div><b class="neg">${s.worse}</b><span>worse</span></div>
-        <div><b>${s.same}</b><span>same</span></div>
+        <div><b>${s.played}</b><span>${T().played}</span></div>
+        <div><b class="pos">${s.better}</b><span>${T().better}</span></div>
+        <div><b class="neg">${s.worse}</b><span>${T().worse}</span></div>
+        <div><b>${s.same}</b><span>${T().same}</span></div>
       </div>
     </div>`;
   }).join("");
-  renderBackupStatus();
+  renderSeasonStatus();
 }
-
-// ---------- add / edit ----------
-const add = { team: TEAMS[0], loc: "H", res: null, editing: false };
-
-function resetAdd() {
-  add.editing = false;
-  add.res = null;
-  $("add-s1").value = $("add-s2").value = "";
-  $("add-date").value = todayISO();
-  $("add-msg").textContent = "";
-  armDelete(false);
-  syncAddForm();
+// Tapping a team's card opens the Table for that team.
+function openTeamTable(e) {
+  const card = e.target.closest(".team-card");
+  if (!card || (e.type === "keydown" && e.key !== "Enter" && e.key !== " ")) return;
+  e.preventDefault();
+  tbTeam = card.dataset.team;
+  show("table");
+  window.scrollTo(0, 0);
 }
-// Fill the score and date fields from a saved game (or blank score + today's date for a new one).
-function fillDetails(g) {
-  const [s1, s2] = g && g.score ? g.score.split("-") : ["", ""];
-  $("add-s1").value = s1 || ""; $("add-s2").value = s2 || "";
-  $("add-date").value = g ? g.date || "" : todayISO();
-}
-function openEdit(team, opp, loc) {
-  const g = games[key(team, opp, loc)];
-  add.team = team; add.loc = loc; add.editing = !!g;
-  add.res = g ? g.result : null;
-  fillDetails(g);
-  $("add-msg").textContent = "";
-  armDelete(false);
-  syncAddForm(opp);
-  show("add");
-}
-function syncAddForm(opp) {
-  makeSeg($("add-team"), TEAM_OPTS, add.team, v => { add.team = v; fillOpponents($("add-opp"), v, $("add-opp").value); slotChanged(); });
-  fillOpponents($("add-opp"), add.team, opp || $("add-opp").value);
-  makeSeg($("add-loc"), LOC_OPTS, add.loc, v => { add.loc = v; slotChanged(); });
-  makeSeg($("add-res"), RES_OPTS, add.res, v => { add.res = v; renderPreview(); });
-  renderPreview();
-}
-// When team/opponent/location changes, load that slot's existing entry (if any).
-function slotChanged() {
-  const g = games[key(add.team, $("add-opp").value, add.loc)];
-  add.editing = !!g;
-  add.res = g ? g.result : null;
-  fillDetails(g);
-  setSeg($("add-res"), add.res);
-  $("add-msg").textContent = "";
-  armDelete(false);
-  renderPreview();
-}
-$("add-opp").addEventListener("change", slotChanged);
-
-function renderPreview() {
-  const opp = $("add-opp").value;
-  const prev = lastSeason(add.team, opp, add.loc);
-  const existing = games[key(add.team, opp, add.loc)];
-  $("add-title").textContent = existing ? "Edit game" : "Add a game";
-  $("btn-save").textContent = existing ? "Save changes" : "Save game";
-  $("edit-actions").hidden = !existing;
-  $("btn-save").disabled = !add.res;
-
-  let html = prev
-    ? `Last season (${locName(add.loc)}): <b>${prev.result === "W" ? "Win" : "Loss"}</b> <span class="muted">${esc(shortDate(prev.date))}</span>`
-    : `No matching game last season.`;
-  if (add.res) {
-    const e = effect(prev, { result: add.res });
-    html += `<br>Effect on balance: <span class="eff ${tone(e)}">${signed(e)}</span>`;
+$("balance-cards").addEventListener("click", openTeamTable);
+$("balance-cards").addEventListener("keydown", openTeamTable);
+function renderSeasonStatus() {
+  const el = $("season-status");
+  el.className = "muted small";
+  const t = T();
+  if (seasonInfo.state === "loading") { el.textContent = t.loading; return; }
+  if (seasonInfo.state === "error") {
+    const { err, file } = seasonInfo;
+    const why = file ? t.openedAsFile
+      : err && err.notFound ? t.notFound(SEASON_FILE, err.notFound)
+      : err && err.noGames ? t.noGames(SEASON_FILE)
+      : err && err.message ? err.message : String(err);
+    el.className = "msg neg"; el.textContent = t.loadError + why; return;
   }
-  if (existing) html += `<br><span class="muted">Already entered this season: ${existing.result === "W" ? "Win" : "Loss"}.</span>`;
-  $("add-preview").innerHTML = html;
+  const when = seasonInfo.exported ? t.updated(shortDate(String(seasonInfo.exported).slice(0, 10))) : "";
+  const skip = seasonInfo.skipped ? t.skipped(seasonInfo.skipped) : "";
+  el.textContent = t.count(seasonInfo.count) + when + skip;
 }
-
-$("btn-save").addEventListener("click", () => {
-  if (!add.res) return;
-  const opp = $("add-opp").value;
-  const s1 = $("add-s1").value.trim(), s2 = $("add-s2").value.trim();
-  const score = s1 && s2 ? `${parseInt(s1, 10)}-${parseInt(s2, 10)}` : "";
-  const date = $("add-date").value; // "YYYY-MM-DD" or "" if left empty
-  const wasEdit = !!games[key(add.team, opp, add.loc)];
-  games[key(add.team, opp, add.loc)] = { team: add.team, opponent: opp, location: add.loc, result: add.res, score, date, saved: new Date().toISOString() };
-  saveGames(games);
-  const e = effect(lastSeason(add.team, opp, add.loc), { result: add.res });
-  $("add-msg").innerHTML = `${wasEdit ? "Updated" : "Saved"}: ${SHORT[add.team]} vs ${esc(oppName(opp))} (${locName(add.loc)}) — balance now <span class="${tone(summary(add.team).bal)}">${signed(summary(add.team).bal)}</span> (${signed(e)})`;
-  armDelete(false);
-  renderPreview();
-});
-
-let deleteArmed = false;
-function armDelete(on) {
-  deleteArmed = on;
-  $("btn-delete").textContent = on ? "Tap again to delete" : "Delete this game";
-  $("btn-delete").classList.toggle("ghost", !on);
-}
-$("btn-delete").addEventListener("click", () => {
-  if (!deleteArmed) { armDelete(true); return; }
-  const opp = $("add-opp").value;
-  delete games[key(add.team, opp, add.loc)];
-  saveGames(games);
-  add.res = null; add.editing = false;
-  setSeg($("add-res"), null);
-  fillDetails(null);
-  $("add-msg").textContent = `Deleted ${SHORT[add.team]} vs ${oppName(opp)} (${locName(add.loc)}).`;
-  armDelete(false);
-  renderPreview();
-});
 
 // ---------- lookup ----------
 const lk = { team: TEAMS[0], loc: "H" };
-function initLookup() {
-  makeSeg($("lk-team"), TEAM_OPTS, lk.team, v => { lk.team = v; fillOpponents($("lk-opp"), v, $("lk-opp").value); renderLookup(); });
-  fillOpponents($("lk-opp"), lk.team);
-  makeSeg($("lk-loc"), LOC_OPTS, lk.loc, v => { lk.loc = v; renderLookup(); });
-  $("lk-opp").addEventListener("change", renderLookup);
+// Builds the lookup controls; called again when the language changes.
+function setupLookup() {
+  makeSeg($("lk-team"), teamOpts(), lk.team, v => { lk.team = v; fillOpponents($("lk-opp"), v, $("lk-opp").value); renderLookup(); });
+  fillOpponents($("lk-opp"), lk.team, $("lk-opp").value);
+  makeSeg($("lk-loc"), locOpts(), lk.loc, v => { lk.loc = v; renderLookup(); });
 }
+$("lk-opp").addEventListener("change", renderLookup);
 function renderLookup() {
   const opp = $("lk-opp").value;
   const prev = lastSeason(lk.team, opp, lk.loc);
   const now = games[key(lk.team, opp, lk.loc)];
   const box = (season, g, details) => `<div class="box"><div class="season">${season}</div>
-    <div class="res">${g ? `<span class="chip ${g.result}">${g.result}</span>` : `<span class="dash">—</span>`}</div>
-    <div class="det">${g ? esc(details.filter(Boolean).join(" · ")) : "Not played yet"}</div></div>`;
+    <div class="res">${g ? resChip(g) : `<span class="dash">—</span>`}</div>
+    <div class="det">${g ? esc(details.filter(Boolean).join(" · ")) : T().notPlayed}</div></div>`;
   // Last season's scores are kept in the data but not shown.
-  let html = box("2025-26", prev, prev ? [shortDate(prev.date), "Rd " + prev.round] : [])
+  let html = box("2025-26", prev, prev ? [shortDate(prev.date), T().round(prev.round)] : [])
            + box("2026-27", now, now ? [now.score, shortDate(now.date)] : []);
-  if (prev && now) { const e = effect(prev, now); html += `<div class="eff ${tone(e)}">Effect: ${signed(e)}</div>`; }
+  if (prev && now) { const e = effect(prev, now); html += `<div class="eff ${tone(e)}">${T().effect}${signed(e)}</div>`; }
   $("lk-result").innerHTML = html;
 }
 
 // ---------- table ----------
 let tbTeam = TEAMS[0];
-let tbSort = "opp";
-const SORT_OPTS = [{ label: "Opponent", value: "opp" }, { label: "Date 25-26", value: "date" }, { label: "Date 26-27", value: "date-now" }];
+let tbSort = "date-now";
+const sortOpts = () => [{ label: T().sortNow, value: "date-now" }, { label: T().sortPrev, value: "date" }, { label: T().sortOpp, value: "opp" }];
 function renderTable() {
-  makeSeg($("tb-team"), TEAM_OPTS, tbTeam, v => { tbTeam = v; renderTable(); });
-  makeSeg($("tb-sort"), SORT_OPTS, tbSort, v => { tbSort = v; renderTable(); });
+  makeSeg($("tb-team"), teamOpts(), tbTeam, v => { tbTeam = v; renderTable(); });
+  makeSeg($("tb-sort"), sortOpts(), tbSort, v => { tbSort = v; renderTable(); });
   const slots = [];
   for (const opp of opponentsFor(tbTeam)) {
     for (const loc of ["H", "A"]) slots.push({ opp, loc, prev: lastSeason(tbTeam, opp, loc), now: games[key(tbTeam, opp, loc)] });
@@ -283,114 +279,49 @@ function renderTable() {
   for (const { opp, loc, prev, now } of slots) {
     const e = now ? effect(prev, now) : null;
     if (e) total += e;
-    const chip = g => g ? `<span class="chip ${g.result}">${g.result}</span>` : `<span class="dash">·</span>`;
+    const chip = g => g ? resChip(g) : `<span class="dash">·</span>`;
     let subText = "";
-    if (tbSort === "date" && prev) subText = `${shortDate(prev.date)} · Rd ${prev.round}`;
+    if (tbSort === "date" && prev) subText = `${shortDate(prev.date)} · ${T().round(prev.round)}`;
     if (tbSort === "date-now") {
       if (now && now.date) subText = [shortDate(now.date), now.score].filter(Boolean).join(" · ");
       else if (prev) subText = shortDate(prev.date);
     }
     const sub = subText ? `<div class="sub-date">${esc(subText)}</div>` : "";
-    rows += `<tr data-opp="${esc(opp)}" data-loc="${loc}">
-      <td>${esc(oppName(opp))}${sub}</td><td>${loc}</td><td>${chip(prev)}</td><td>${chip(now)}</td>
+    rows += `<tr>
+      <td>${esc(oppName(opp))}${sub}</td><td>${T().loc[loc]}</td><td>${chip(prev)}</td><td>${chip(now)}</td>
       <td class="${e === null ? "dash" : tone(e)}">${e === null ? "" : signed(e)}</td></tr>`;
   }
   $("tb-body").innerHTML = rows;
   const s = summary(tbTeam);
-  $("tb-foot").innerHTML = `<tr><td colspan="3">Balance (${s.played} played)</td><td></td><td class="${tone(total)}">${signed(total)}</td></tr>`;
+  $("tb-foot").innerHTML = `<tr><td colspan="3">${T().total(s.played)}</td><td></td><td class="${tone(total)}">${signed(total)}</td></tr>`;
 }
-$("tb-body").addEventListener("click", e => {
-  const tr = e.target.closest("tr");
-  if (tr) openEdit(tbTeam, tr.dataset.opp, tr.dataset.loc);
-});
 
-// ---------- backup ----------
-function renderBackupStatus() {
-  let last = null;
-  try { last = localStorage.getItem(BACKUP_KEY); } catch {}
-  const n = Object.keys(games).length;
-  if (!last) { $("backup-status").textContent = n ? `${n} games saved on this phone. No backup yet.` : "Nothing to back up yet."; return; }
-  const days = Math.floor((Date.now() - new Date(last)) / 864e5);
-  $("backup-status").textContent = `${n} games saved. Last backup: ${days === 0 ? "today" : days + " day" + (days > 1 ? "s" : "") + " ago"}.`;
+// ---------- language switch ----------
+// Fixed page text has data-i18n (plain text) or data-i18n-html (contains tags) with a TEXT key.
+function applyLang() {
+  const t = T();
+  document.documentElement.lang = lang;
+  document.documentElement.dir = t.dir;
+  document.title = t.title;
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t[el.dataset.i18n];
+  for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t[el.dataset.i18nHtml];
+  $("lang-btn").textContent = t.switchTo;
+  $("lang-btn").setAttribute("aria-label", t.switchLabel);
+  setupLookup();
 }
-// Android's share menu only accepts certain file types (not .json), so on phones the
-// backup is shared as a .txt file (same JSON content). Computers get a normal download.
-const isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
-function downloadBackup(text, name) {
-  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
-  const a = document.createElement("a");
-  a.href = url; a.download = name;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
-}
-function backupMsg(text, isError) {
-  $("backup-msg").textContent = text;
-  $("backup-msg").className = "msg" + (isError ? " neg" : "");
-}
-$("btn-export").addEventListener("click", async () => {
-  const data = { app: "euroleague-balance", version: 1, exported: new Date().toISOString(), games: Object.values(games) };
-  const text = JSON.stringify(data, null, 2);
-  const base = `euroleague-balance-${new Date().toISOString().slice(0, 10)}`;
-  backupMsg("");
-  try {
-    const file = new File([text], base + ".txt", { type: "text/plain" });
-    if (isPhone && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: "EuroLeague Balance backup" });
-        backupMsg("Backup shared. Save it somewhere safe, e.g. Google Drive.");
-      } catch (err) {
-        if (err && err.name === "AbortError") { backupMsg("Backup cancelled."); return; }
-        downloadBackup(text, base + ".json");
-        backupMsg("Sharing didn't work, so the backup was downloaded instead (check Downloads).");
-      }
-    } else {
-      downloadBackup(text, base + ".json");
-      backupMsg("Backup downloaded (check your Downloads folder).");
-    }
-    try { localStorage.setItem(BACKUP_KEY, new Date().toISOString()); } catch {}
-  } catch (err) {
-    backupMsg("Backup failed: " + (err && err.message ? err.message : err), true);
-  }
-  renderBackupStatus();
+$("lang-btn").addEventListener("click", () => {
+  lang = lang === "he" ? "en" : "he";
+  try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+  applyLang();
+  show(currentView, true);
 });
-
-let pendingImport = null;
-$("btn-import").addEventListener("click", () => $("import-file").click());
-$("import-file").addEventListener("change", async e => {
-  const f = e.target.files[0];
-  e.target.value = "";
-  if (!f) return;
-  try {
-    const data = JSON.parse(await f.text());
-    if (data.app !== "euroleague-balance" || !Array.isArray(data.games)) throw new Error("bad");
-    const valid = data.games.filter(g => TEAMS.includes(g.team) && opponentsFor(g.team).includes(RENAMED[g.opponent] || g.opponent)
-      && (g.location === "H" || g.location === "A") && (g.result === "W" || g.result === "L"));
-    pendingImport = valid;
-    $("import-msg").textContent = `This backup has ${valid.length} games (from ${String(data.exported || "").slice(0, 10)}). It will replace the ${Object.keys(games).length} games on this phone.`;
-    $("import-confirm").hidden = false;
-  } catch {
-    pendingImport = null;
-    $("import-msg").textContent = "That file isn't a EuroLeague Balance backup.";
-    $("import-confirm").hidden = false;
-    $("btn-import-yes").hidden = true;
-    return;
-  }
-  $("btn-import-yes").hidden = false;
-});
-$("btn-import-yes").addEventListener("click", () => {
-  if (!pendingImport) return;
-  games = migrate(pendingImport);
-  saveGames(games);
-  pendingImport = null;
-  $("import-confirm").hidden = true;
-  renderBalance();
-});
-$("btn-import-no").addEventListener("click", () => { pendingImport = null; $("import-confirm").hidden = true; });
 
 // ---------- start ----------
-syncAddForm();
-initLookup();
-show("balance");
+applyLang();
+if (history.state && history.state.view) history.replaceState(null, ""); // reopened on another screen's entry
+window.addEventListener("popstate", () => { show("balance", true); window.scrollTo(0, 0); });
+show("balance", true);
+loadSeason().then(() => show(currentView, true));
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

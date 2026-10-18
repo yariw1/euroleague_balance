@@ -6,7 +6,7 @@ It's a web app (PWA). You install it from Chrome on Android and it works like a 
 
 ## How the balance works
 
-Each team plays 38 regular-season games: every opponent once at home and once away. Each game entered this season is compared with last season's game against the same opponent at the same location:
+Each team plays 38 regular-season games: every opponent once at home and once away. Each game in this season's results file is compared with last season's game against the same opponent at the same location:
 
 | Last season | This season | Balance |
 |---|---|---|
@@ -25,25 +25,32 @@ Only regular-season games are tracked. Play-in and playoff games aren't included
 
 ## Screens
 
-- **Balance**: each team's current balance and how many games were better, worse or the same. Also has the backup buttons.
-- **Add**: choose team, opponent, home/away and win/loss. Score and date are optional; the date starts as today. It shows last season's result and the effect on the balance before you save.
+- **Balance**: each team's current balance and how many games were better, worse or the same. Tap a team's card to open its Table. Below the cards it shows how many games were read from the results file and when the file was last updated.
+- **Table**: all 38 games for a team, sorted by this season's date (the default; games not played yet come after, in last season's order), by last season's date, or by opponent.
 - **Look up**: pick any game to see both seasons side by side.
-- **Table**: all 38 games for a team, sorted by opponent, by last season's date, or by this season's date (games not played yet come after, in last season's order). Tap a row to add, edit or delete this season's result.
 
-## Your data and privacy
+## This season's results
 
-- This season's results are saved **only on the phone**, in Chrome's storage for this site. They are never uploaded anywhere.
-- Anyone else who opens the link gets an empty app and can't see or change your data.
-- The code and last season's results are public on GitHub. They contain nothing personal.
+The app reads this season's results from `season-2026-27.json`. It's the same format the old "Export backup" button made, so an old backup file can be used as is (rename it to `season-2026-27.json`). Add games to it as the season goes on and upload it to GitHub; partial results are fine.
 
-### Backups
+```json
+{
+  "app": "euroleague-balance",
+  "version": 1,
+  "exported": "2026-10-18T00:00:00.000Z",
+  "games": [
+    { "team": "Hapoel Tel Aviv", "opponent": "Barcelona", "location": "H", "result": "W", "score": "88-80", "date": "2026-10-01" }
+  ]
+}
+```
 
-Clearing Chrome's data, uninstalling the app or changing phones deletes the saved results. To protect them:
+- `team`: `Hapoel Tel Aviv` or `Maccabi Tel Aviv`.
+- `opponent`: the name as in `data-2025-26.js` (use `Besiktas`, not Monaco; `ASVEL` is also accepted for Villeurbanne).
+- `location`: `H` or `A`. `result`: `W` or `L`, from the team's point of view.
+- `score` (team-opponent) and `date` (`YYYY-MM-DD`) are optional. `exported` is shown as "file updated" on the Balance screen, so change it when you update the file. Other fields (such as `saved` from old backups) are ignored.
+- Entries the app doesn't recognise (unknown team or opponent, bad location or result) are skipped, and the Balance screen says how many.
 
-- **Export backup** (Balance screen): on a phone it opens the share menu with a `.txt` backup file (Android doesn't allow sharing `.json` files), so you can save it to Google Drive. On a computer it downloads a `.json` file. Both contain the same data.
-- **Import backup** restores a backup file (`.txt` or `.json`). It replaces the results currently on the phone and asks you to confirm first.
-
-The Balance screen shows how long ago the last backup was made.
+The app downloads the file each time it opens. Without internet it uses the last copy it downloaded. The results file is public on GitHub, like the rest of the app.
 
 ## Installing on Android
 
@@ -56,16 +63,17 @@ The Balance screen shows how long ago the last backup was made.
 | File | Purpose |
 |---|---|
 | `index.html` | The app's screens |
-| `app.js` | App logic: balance calculation, saving, backup |
+| `app.js` | App logic: reading this season's file, balance calculation |
 | `style.css` | Look and layout (light and dark mode) |
 | `data-2025-26.js` | Last season's 76 results and the Monaco → Besiktas mapping |
+| `season-2026-27.json` | This season's results (you update this file) |
 | `manifest.webmanifest` | App name, icon and colors for installing |
 | `sw.js` | Keeps a copy of the app on the phone so it opens offline |
 | `icons/` | App icons |
 
 ## Updating the app
 
-After changing any file, change the version in `sw.js` (for example `elb-v6` → `elb-v7`) and upload the changed files to GitHub. Phones then pick up the new version the next time the app is opened with internet (sometimes it takes a second open). Saved results aren't affected.
+After changing any file, change the version in `sw.js` (for example `elb-v18` → `elb-v19`) and upload the changed files to GitHub. Phones then pick up the new version the next time the app is opened with internet (sometimes it takes a second open). You don't need to change the version when you only update `season-2026-27.json`; the app always fetches the latest one.
 
 ## Data source
 

@@ -1,7 +1,9 @@
 {
-  "name": "EuroLeague Balance",
-  "short_name": "EL Balance",
-  "description": "Hapoel & Maccabi Tel Aviv: this season vs last season.",
+  "name": "מאזן יורוליג",
+  "short_name": "מאזן יורוליג",
+  "description": "הפועל ומכבי תל אביב: העונה מול העונה שעברה.",
+  "lang": "he",
+  "dir": "rtl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
