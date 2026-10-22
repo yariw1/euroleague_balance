@@ -1,7 +1,7 @@
 {
   "app": "euroleague-balance",
   "version": 1,
-  "exported": "2026-10-18T14:37:29.128Z",
+  "exported": "2026-10-22T08:21:39.648Z",
   "games": [
     {
       "team": "Hapoel Tel Aviv",
@@ -98,6 +98,14 @@
       "result": "W",
       "score": "91-81",
       "date": "2026-10-16"
+    },
+    {
+      "team": "Hapoel Tel Aviv",
+      "opponent": "Virtus Bologna",
+      "location": "H",
+      "result": "W",
+      "score": "90-81",
+      "date": "2026-10-21"
     }
   ]
 }
