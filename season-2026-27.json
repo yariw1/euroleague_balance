@@ -1,7 +1,7 @@
 {
   "app": "euroleague-balance",
   "version": 1,
-  "exported": "2026-10-22T08:21:39.648Z",
+  "exported": "2026-10-23T08:18:00.906Z",
   "games": [
     {
       "team": "Hapoel Tel Aviv",
@@ -106,6 +106,14 @@
       "result": "W",
       "score": "90-81",
       "date": "2026-10-21"
+    },
+    {
+      "team": "Maccabi Tel Aviv",
+      "opponent": "Real Madrid",
+      "location": "H",
+      "result": "L",
+      "score": "99-113",
+      "date": "2026-10-22"
     }
   ]
 }
