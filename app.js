@@ -256,17 +256,19 @@ const sortOpts = () => [{ label: T().sortNow, value: "date-now" }, { label: T().
 function renderTable() {
   makeSeg($("tb-team"), teamOpts(), tbTeam, v => { tbTeam = v; renderTable(); });
   makeSeg($("tb-sort"), sortOpts(), tbSort, v => { tbSort = v; renderTable(); });
-  const slots = [];
+  let slots = [];
   for (const opp of opponentsFor(tbTeam)) {
     for (const loc of ["H", "A"]) slots.push({ opp, loc, prev: lastSeason(tbTeam, opp, loc), now: games[key(tbTeam, opp, loc)] });
   }
+  // The 26-27 view lists only games already played this season.
+  if (tbSort === "date-now") slots = slots.filter(s => s.now);
   // Actual game date (some games were postponed, so round order isn't always date order).
   const prevWhen = s => (s.prev ? toTime(s.prev.date) || 0 : Infinity);
   const byPrev = (a, b) => prevWhen(a) - prevWhen(b) || (a.prev?.round || 0) - (b.prev?.round || 0);
   const nowWhen = s => (s.now ? toTime(s.now.date) : NaN);
   if (tbSort === "date") slots.sort(byPrev);
   if (tbSort === "date-now") {
-    // This season's games by their date first, then the rest by last season's date.
+    // This season's games by their date (any without a date go last).
     slots.sort((a, b) => {
       const ta = nowWhen(a), tb = nowWhen(b);
       if (!isNaN(ta) && !isNaN(tb)) return ta - tb || byPrev(a, b);
