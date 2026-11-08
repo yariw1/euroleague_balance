@@ -72,6 +72,7 @@ The app downloads the file each time it opens. Without internet it uses the last
 | `index.html` | The app's screens |
 | `app.js` | App logic: reading this season's file, balance calculation |
 | `style.css` | Look and layout (light and dark mode) |
+| `style-original.css` | The app's previous look, kept to switch back to (not used) |
 | `data-2025-26.js` | Last season's 76 results and the Monaco → Besiktas mapping |
 | `season-2026-27.json` | This season's results (you update this file) |
 | `update-season.js` | Fills `season-2026-27.json` from the EuroLeague API (not part of the app) |
@@ -83,6 +84,16 @@ The app downloads the file each time it opens. Without internet it uses the last
 ## Updating the app
 
 After changing any file, change the version in `sw.js` (for example `elb-v18` → `elb-v19`) and upload the changed files to GitHub. Phones then pick up the new version the next time the app is opened with internet (sometimes it takes a second open). You don't need to change the version when you only update `season-2026-27.json`; the app always fetches the latest one.
+
+## Switching back to the previous look
+
+The current look (red and yellow team cards, rounded buttons, the Rubik font) is in `style.css`. The app's earlier, plainer look is kept in `style-original.css`. To switch back:
+
+1. In `index.html`, change `href="style.css"` to `href="style-original.css"`.
+2. In `sw.js`, change `"style.css"` in the `FILES` list to `"style-original.css"`, and change the version (for example `elb-v27` → `elb-v28`).
+3. Upload the changed files to GitHub.
+
+The line icons in the bottom tabs work with both looks. Switching back the other way is the same steps in reverse.
 
 ## Data source
 

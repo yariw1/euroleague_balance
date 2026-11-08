@@ -1,6 +1,6 @@
 // Caches the app files so it opens instantly and works offline.
 // Bump CACHE when any app file changes, so phones pick up the new version.
-const CACHE = "elb-v26";
+const CACHE = "elb-v27";
 const FILES = ["./", "index.html", "style.css", "app.js", "data-2025-26.js", "season-2026-27.json", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -22,6 +22,15 @@ self.addEventListener("fetch", e => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put("season-2026-27.json", copy)); }
       return res;
     }).catch(() => caches.match("season-2026-27.json")));
+    return;
+  }
+  // The Google font: saved the first time it loads, so the app keeps its look offline.
+  if (/^fonts\.(googleapis|gstatic)\.com$/.test(new URL(e.request.url).hostname)) {
+    e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
+      const copy = res.clone();
+      caches.open(CACHE).then(c => c.put(e.request, copy));
+      return res;
+    })));
     return;
   }
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request)));

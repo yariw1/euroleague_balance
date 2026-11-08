@@ -1,28 +1,40 @@
+/* EuroLeague Balance style: bold team-colour cards, rounded pills, original-style games table.
+   The previous look is kept in style-original.css (see README to switch back). */
 :root {
-  --bg: #f3f4f8;
+  --font: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r-sm: 999px; --r-md: 16px; --r-lg: 26px;
+  --bg: #f1f2f7;
   --card: #ffffff;
-  --text: #171a26;
-  --muted: #6b7083;
-  --line: #e2e4ec;
-  --accent: #e8702a;
-  --pos: #13853e;
-  --neg: #c62828;
-  --zero: #6b7083;
-  --hapoel: #d6202a;
-  --maccabi: #f2b900;
-  --top: #14182b;
+  --text: #15172a;
+  --muted: #6a6e85;
+  --line: #e4e6ef;
+  --subtle: #f1f2f7;
+  --accent: #5b4cf0;
+  --pos: #14924a;
+  --neg: #d93640;
+  --zero: #6a6e85;
+  --hapoel: #e0262f;
+  --hapoel-2: #9c0f18;
+  --maccabi: #ffcc1a;
+  --maccabi-2: #f29d00;
+  --navy: #14172e;
+  --shadow: 0 2px 4px rgba(20,23,46,.04), 0 12px 32px -14px rgba(20,23,46,.22);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1120;
-    --card: #1a1d30;
-    --text: #eceef6;
-    --muted: #9a9fb5;
-    --line: #2b2f47;
-    --pos: #4cc27a;
-    --neg: #ff6b6b;
-    --zero: #9a9fb5;
+    --bg: #0c0d18;
+    --card: #181a2c;
+    --text: #f1f2fa;
+    --muted: #979bb5;
+    --line: #2a2d45;
+    --subtle: #22253b;
+    --accent: #8f84ff;
+    --pos: #45d184;
+    --neg: #ff6670;
+    --zero: #979bb5;
+    --navy: #050610;
+    --shadow: 0 16px 40px -18px rgba(0,0,0,.8);
     color-scheme: dark;
   }
 }
@@ -30,115 +42,164 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
-  font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 16px/1.45 var(--font);
   background: var(--bg);
   color: var(--text);
-  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
   -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
 }
 [hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
+/* Header: navy band with a red/yellow stripe underneath */
 .top {
-  background: var(--top);
+  position: relative;
+  background: var(--navy);
   color: #fff;
-  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 14px;
-  /* Always left-to-right, so the language button stays on the left in both languages. */
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 18px 18px;
   direction: ltr;
   display: flex; align-items: center; gap: 12px;
 }
-.top-text { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.top::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
+  background: linear-gradient(90deg, var(--hapoel) 0 50%, var(--maccabi) 50% 100%);
+}
+.top-text { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 8px; }
 html[dir="rtl"] .top-text { direction: rtl; }
-.top h1 { font-size: 1.15rem; margin: 0; letter-spacing: .2px; white-space: nowrap; }
-.top .sub { font-size: .8rem; opacity: .7; white-space: nowrap; }
+.top h1 { font-size: 1.35rem; font-weight: 800; margin: 0; white-space: nowrap; }
+.top .sub { font-size: .8rem; font-weight: 500; opacity: .65; white-space: nowrap; }
 
-main { padding: 16px; max-width: 560px; margin: 0 auto; }
+main { padding: 18px 16px; max-width: 560px; margin: 0 auto; }
 .card {
   background: var(--card);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
 }
-h2 { font-size: 1.05rem; margin: 0 0 10px; }
+h2 { font-size: 1.25rem; font-weight: 800; margin: 0 0 6px; }
 .muted { color: var(--muted); }
 .small { font-size: .85rem; }
-.intro { margin: 0 4px 12px; line-height: 1.4; }
+.intro { margin: 0 4px 16px; line-height: 1.55; }
+.view { animation: pop .3s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.99); } to { opacity: 1; transform: none; } }
 
-/* Balance cards */
-.team-card { border-top: 6px solid var(--team, var(--accent)); }
-.team-card { cursor: pointer; transition: transform .1s; }
-.team-card:active { transform: scale(.98); }
-.team-card .name { font-weight: 700; font-size: 1.05rem; display: flex; justify-content: space-between; align-items: baseline; }
-.team-card .go { font-size: .8rem; font-weight: 600; color: var(--muted); }
-.team-card .num { font-size: 3.4rem; font-weight: 800; line-height: 1.1; margin: 4px 0 6px; font-variant-numeric: tabular-nums; }
-.team-card .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
-.team-card .stats div { background: var(--bg); border-radius: 10px; padding: 6px 2px; }
-.team-card .stats b { display: block; font-size: 1.1rem; }
-.team-card .stats span { font-size: .72rem; color: var(--muted); }
+/* Balance cards: full team colour */
+.team-card {
+  position: relative; overflow: hidden; cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, var(--c1) 0%, var(--c2) 100%);
+  box-shadow: 0 18px 40px -18px var(--c2);
+  transition: transform .18s cubic-bezier(.2,.9,.3,1.3);
+}
+.team-card.hapoel { --c1: var(--hapoel); --c2: var(--hapoel-2); }
+.team-card.maccabi { --c1: var(--maccabi); --c2: var(--maccabi-2); color: #1b1606; }
+/* Large faint circle as decoration */
+.team-card::after {
+  content: ""; position: absolute; width: 220px; height: 220px; border-radius: 50%;
+  inset-inline-end: -70px; top: -90px; background: rgba(255,255,255,.12); pointer-events: none;
+}
+.team-card:active { transform: scale(.97); }
+.team-card .name { position: relative; font-weight: 700; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+.team-card .go { font-size: .78rem; font-weight: 700; background: rgba(255,255,255,.22); border-radius: 999px; padding: 4px 12px; }
+.team-card.maccabi .go { background: rgba(0,0,0,.1); }
+.team-card .num { position: relative; font-size: 4.6rem; font-weight: 800; line-height: 1; margin: 12px 0 16px; font-variant-numeric: tabular-nums; }
+/* On a coloured card the big number keeps the card's text colour; the sign tells better/worse. */
+.team-card .num { color: inherit; }
+/* The small boxes are near-white, so "better" stays green and "worse" stays red on both cards. */
+.team-card .stats { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+.team-card .stats div { background: rgba(255,255,255,.94); color: #15172a; border-radius: var(--r-md); padding: 10px 2px 8px; box-shadow: 0 4px 12px -6px rgba(0,0,0,.3); }
+.team-card .stats b { display: block; font-size: 1.25rem; font-weight: 800; }
+.team-card .stats b.pos { color: #14924a; }
+.team-card .stats b.neg { color: #d93640; }
+.team-card .stats span { font-size: .72rem; color: #5d6178; }
 .pos { color: var(--pos); } .neg { color: var(--neg); } .zero { color: var(--zero); }
 .hapoel { --team: var(--hapoel); }
 .maccabi { --team: var(--maccabi); }
 
 /* Forms */
-.lbl { display: block; font-size: .85rem; color: var(--muted); margin: 12px 0 6px; }
+.lbl { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin: 16px 0 8px; }
 select {
-  width: 100%; font: inherit; color: var(--text); background: var(--bg);
-  border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+  width: 100%; font: inherit; font-weight: 500; color: var(--text); background-color: var(--subtle);
+  border: 2px solid transparent; border-radius: var(--r-md); padding: 12px 16px;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23979bb5' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='m2 4 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
+  transition: border-color .2s;
 }
-.seg { display: flex; gap: 6px; background: var(--bg); border-radius: 12px; padding: 4px; }
+select:focus { border-color: var(--accent); outline: none; }
+html[dir="rtl"] select { background-position: left 16px center; }
+.seg { display: flex; gap: 6px; background: var(--subtle); border-radius: 999px; padding: 5px; }
 .seg button {
-  flex: 1; font: inherit; font-size: .95rem; border: 0; background: transparent; color: var(--text);
-  padding: 10px 6px; border-radius: 9px; cursor: pointer;
+  flex: 1; font: inherit; font-size: .92rem; font-weight: 600; border: 0; background: transparent; color: var(--muted);
+  padding: 10px 6px; border-radius: 999px; cursor: pointer;
+  transition: background .2s, color .2s, transform .15s;
 }
-.seg button.on { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.15); font-weight: 700; }
+.seg button:active { transform: scale(.96); }
+.seg button.on { background: var(--accent); color: #fff; font-weight: 700; box-shadow: 0 6px 16px -6px var(--accent); }
 .seg.wide { margin-bottom: 12px; }
-/* Team buttons: faint team colour when not chosen, solid team colour with a tick when chosen. */
-.seg button.hapoel, .seg button.maccabi { background: color-mix(in srgb, var(--team) 14%, transparent); opacity: .75; }
-.seg button.hapoel.on, .seg button.maccabi.on { background: var(--team); opacity: 1; box-shadow: 0 0 0 2px var(--text); }
+.seg button.hapoel, .seg button.maccabi { background: color-mix(in srgb, var(--team) 14%, transparent); color: var(--text); }
+.seg button.hapoel.on, .seg button.maccabi.on { background: var(--team); box-shadow: 0 6px 16px -6px var(--team); }
 .seg button.hapoel.on { color: #fff; }
-.seg button.maccabi.on { color: #171a26; }
+.seg button.maccabi.on { color: #1b1606; }
 .seg button.hapoel.on::before, .seg button.maccabi.on::before { content: "✓ "; }
+/* The table page's controls sit straight on the page, so give them a card look. */
+.seg.wide { background: var(--card); box-shadow: var(--shadow); }
 
 .msg { min-height: 1.2em; margin: 10px 0 0; font-weight: 600; }
 
 /* Lookup compare */
-.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-.compare .box { background: var(--bg); border-radius: 12px; padding: 12px; text-align: center; }
-.compare .season { font-size: .8rem; color: var(--muted); }
-.compare .res { font-size: 2rem; font-weight: 800; }
-.compare .det { font-size: .8rem; color: var(--muted); }
-.compare .eff { grid-column: 1 / -1; text-align: center; font-weight: 700; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.compare .box { background: var(--subtle); border-radius: var(--r-md); padding: 16px 10px; text-align: center; }
+.compare .season { font-size: .78rem; font-weight: 700; color: var(--muted); }
+.compare .res { font-size: 2rem; font-weight: 800; margin: 8px 0 4px; }
+.compare .res .chip { font-size: 1.3rem; padding: 6px 18px; }
+.compare .det { font-size: .78rem; color: var(--muted); }
+.compare .eff { grid-column: 1 / -1; text-align: center; font-weight: 800; font-size: 1.05rem; padding: 12px; border-radius: 999px; background: var(--subtle); }
 
-/* Table */
+/* Table: kept in the app's original look (plain card, tinted W/L chips). */
 .table-wrap { overflow-x: auto; background: var(--card); border-radius: 16px; }
 table.games { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .games th, .games td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--line); }
 .games th:first-child, .games td:first-child { text-align: start; padding-inline-start: 12px; }
 .games th { font-size: .78rem; color: var(--muted); font-weight: 600; }
 .games tfoot td { font-weight: 800; border-bottom: 0; }
-.chip { display: inline-block; min-width: 26px; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: .85rem; }
-.chip.W { background: color-mix(in srgb, var(--pos) 18%, transparent); color: var(--pos); }
-.chip.L { background: color-mix(in srgb, var(--neg) 18%, transparent); color: var(--neg); }
+.games .chip { min-width: 26px; padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: .85rem; }
+.games .chip.W { background: color-mix(in srgb, var(--pos) 18%, transparent); color: var(--pos); }
+.games .chip.L { background: color-mix(in srgb, var(--neg) 18%, transparent); color: var(--neg); }
+/* Chips elsewhere (the Look up page) stay in style 3's solid pills. */
+.chip { display: inline-block; min-width: 28px; padding: 3px 8px; border-radius: 999px; font-weight: 800; font-size: .8rem; }
+.chip.W { background: var(--pos); color: #fff; }
+.chip.L { background: var(--neg); color: #fff; }
 .dash { color: var(--muted); }
 .sub-date { font-size: .75rem; color: var(--muted); margin-top: 2px; }
 
-/* Bottom tabs */
+/* Bottom tabs: a floating dark pill */
 .tabs {
-  position: fixed; left: 0; right: 0; bottom: 0;
-  display: flex; background: var(--card); border-top: 1px solid var(--line);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  position: fixed; left: 0; right: 0; margin: 0 auto;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: calc(100% - 28px); max-width: 400px;
+  display: flex; gap: 4px; padding: 6px;
+  background: var(--navy); border-radius: 999px;
+  box-shadow: 0 14px 34px -10px rgba(20,23,46,.55);
 }
 .tabs button {
-  flex: 1; border: 0; background: none; font: inherit; font-size: .75rem; color: var(--muted);
-  padding: 8px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer;
+  flex: 1; border: 0; background: none; font: inherit; font-size: .78rem; font-weight: 600; color: rgba(255,255,255,.6);
+  padding: 10px 6px; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 6px; cursor: pointer;
+  border-radius: 999px; transition: background .25s, color .25s;
 }
-.tabs button .ico { font-size: 1.25rem; filter: grayscale(1); opacity: .7; }
-.tabs button.active { color: var(--accent); font-weight: 700; }
-.tabs button.active .ico { filter: none; opacity: 1; }
+.tabs button .ico { display: flex; }
+.tabs button .ico svg { width: 20px; height: 20px; }
+.tabs button.active { background: #fff; color: var(--navy); font-weight: 700; }
 
-/* Language switch in the header */
+/* Language switch */
 .lang-btn {
-  font: inherit; font-size: .8rem; font-weight: 700; color: #fff; background: transparent;
-  border: 1px solid rgba(255,255,255,.5); border-radius: 999px; padding: 4px 10px; cursor: pointer;
+  font: inherit; font-size: .8rem; font-weight: 700; color: #fff; background: rgba(255,255,255,.12);
+  border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer;
 }
-.lang-btn:active { background: rgba(255,255,255,.15); }
+.lang-btn:active { background: rgba(255,255,255,.22); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { animation: none !important; transition: none !important; }
+}
