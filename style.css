@@ -63,7 +63,7 @@ body {
 }
 .top::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
-  background: linear-gradient(90deg, var(--hapoel) 0 50%, var(--maccabi) 50% 100%);
+  background: linear-gradient(90deg, var(--maccabi) 0 50%, var(--hapoel) 50% 100%);
 }
 .top-text { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 8px; }
 html[dir="rtl"] .top-text { direction: rtl; }
