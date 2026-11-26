@@ -1,7 +1,7 @@
 {
   "app": "euroleague-balance",
   "version": 1,
-  "exported": "2026-11-25T12:13:27.914Z",
+  "exported": "2026-11-26T11:57:47.417Z",
   "games": [
     {
       "team": "Hapoel Tel Aviv",
@@ -218,6 +218,14 @@
       "result": "W",
       "score": "87-79",
       "date": "2026-11-24"
+    },
+    {
+      "team": "Hapoel Tel Aviv",
+      "opponent": "Olympiacos",
+      "location": "A",
+      "result": "L",
+      "score": "79-104",
+      "date": "2026-11-25"
     }
   ]
 }
